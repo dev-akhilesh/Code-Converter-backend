@@ -1,155 +1,60 @@
-const express = require('express');
-const cors = require('cors')
-// const { OpenAIApi, Configuration } = require('openai');
-require('dotenv').config();
+const express = require("express")
+const cors = require("cors")
+const { Configuration, OpenAIApi } = require("openai");
+const app = express()
 
-const app = express();
 app.use(cors())
-app.use(express.json());
+app.use(express.json())
+require("dotenv").config();
 
-// Set your OpenAI API key
-const apiKey = process.env.OPEN_AI_KEY;
+const configuration = new Configuration({
+    apiKey: process.env.OPEN_AI_KEY,
+});
 
-app.get('/', (req, res) => {
-    res.status(200).send('Welcome To Open AI');
-})
+const openai = new OpenAIApi(configuration);
 
-
-app.post('/converter', async (req, res) => {
-
-    const { inputCode, sourceLanguage, targetLanguage } = req.body;
-
-    let prompt;
-    if (sourceLanguage) {
-        prompt = `Convert the following ${sourceLanguage} code to ${targetLanguage}:\n${inputCode}`;
-    } else {
-        prompt = `Convert the following code into ${targetLanguage}:\n${inputCode}`;
-    }
-
+const completeGenerator = async (inputPrompt, code) => {
+    const messages = [{ role: "user", content: code }, { role: "assistant", content: inputPrompt }];
     try {
+        if (!code) throw new Error("No input is provided")
 
-        const response = await fetch('https://api.openai.com/v1/engines/text-davinci-003/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                prompt,
-                max_tokens: 150,  // Adjust as needed
-            }),
+        const completion = await openai.createChatCompletion({
+            model: "gpt-3.5-turbo",
+            messages: messages,
         });
 
-        const responseData = await response.json();
-        const generatedCode = responseData.choices[0].text.trim();
-
-        console.log(`generatedCode `, generatedCode);
-
-        return res.status(201).send({
-            data: generatedCode
-        })
-
-
+        console.log(completion.data.choices[0].message.content)
+        return JSON.stringify(completion.data.choices[0].message.content)
     } catch (error) {
-
-        console.error('Error converting code:', error);
-
-        return res.status(201).send({
-            data: error
-        })
-
+        console.error('Error:', error);
     }
+}
+
+app.post("/convert", async (req, res) => {
+    const language = req.query.language
+    const inputcode = req.body.inputcode
+    let response = await completeGenerator(`Convert a code from current language to ${language} language every line should in new line`, inputcode);
+    console.log(response);
+    res.send(response)
 
 })
 
-
-app.post('/debug', async (req, res) => {
-
-    const { inputCode, sourceLanguage, targetLanguage } = req.body;
-
-    const prompt = `debug the following code (which could include identification of errors, suggestions for fixes, etc.) : \n${inputCode}`;
-
-    try {
-
-        const response = await fetch('https://api.openai.com/v1/engines/text-davinci-003/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                prompt,
-                max_tokens: 150,  // Adjust as needed
-            }),
-        });
-
-        const responseData = await response.json();
-        const generatedCode = responseData.choices[0].text.trim();
-
-        console.log(`generatedCode `, generatedCode);
-
-        return res.status(201).send({
-            data: generatedCode
-        })
-
-
-    } catch (error) {
-
-        console.error('Error converting code:', error);
-
-        return res.status(201).send({
-            data: error
-        })
-
-    }
+app.post("/debug", async (req, res) => {
+    const inputcode = req.body.inputcode
+    let response = await completeGenerator(`Please Debug the code that is ${inputcode} if there is any error, and explain step by step process to correct it.`, inputcode);
+    console.log(response);
+    res.send(response)
 
 })
 
-
-app.post('/performance', async (req, res) => {
-
-    const { inputCode, sourceLanguage, targetLanguage } = req.body;
-
-    const prompt = `check performance of the following code and assessment of the code's quality (such as commentary on style, organization, potential improvements, etc.) : \n${inputCode}`;
-
-    try {
-
-        const response = await fetch('https://api.openai.com/v1/engines/text-davinci-003/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                prompt,
-                max_tokens: 150,  // Adjust as needed
-            }),
-        });
-
-        const responseData = await response.json();
-        const generatedCode = responseData.choices[0].text.trim();
-
-        console.log(`generatedCode `, generatedCode);
-
-        return res.status(201).send({
-            data: generatedCode
-        })
-
-
-    } catch (error) {
-
-        console.error('Error converting code:', error);
-
-        return res.status(201).send({
-            data: error
-        })
-
-    }
-
+app.post("/qualityCheck", async (req, res) => {
+    const inputcode = req.body.inputcode
+    let response = await completeGenerator(`Please Check the quality of code that is ${inputcode} if there is any possiblity to optimize the code then give some tips to inprove it`, inputcode);
+    console.log(response);
+    res.send(response)
 })
 
-
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+const port = process.env.PORT;
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
