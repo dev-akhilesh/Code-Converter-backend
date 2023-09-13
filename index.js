@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors')
-const { OpenAIApi, Configuration } = require('openai');
+// const { OpenAIApi, Configuration } = require('openai');
 require('dotenv').config();
 
 const app = express();
