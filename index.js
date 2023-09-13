@@ -31,7 +31,7 @@ const completeGenerator = async (inputPrompt, code) => {
 }
 
 app.get('/', (req, res) => {
-    res.status(200).send('Welcome To Open AI');
+    res.status(200).send('Welcome To Code Converter');
 })
 
 app.post("/convert", async (req, res) => {
