@@ -30,6 +30,10 @@ const completeGenerator = async (inputPrompt, code) => {
     }
 }
 
+app.get('/', (req, res) => {
+    res.status(200).send('Welcome To Open AI');
+})
+
 app.post("/convert", async (req, res) => {
     const language = req.query.language
     const inputcode = req.body.inputcode
@@ -53,6 +57,7 @@ app.post("/qualityCheck", async (req, res) => {
     console.log(response);
     res.send(response)
 })
+
 
 const port = process.env.PORT;
 app.listen(port, () => {
